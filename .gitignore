@@ -1,0 +1,12 @@
+node_modules/
+dist/
+public/*
+!public/slices3/
+*.psd
+*.clip
+*.kra
+*.xcf
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
