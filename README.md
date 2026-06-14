@@ -129,9 +129,13 @@ Eye Aspect Ratio で目の開閉度を計算:
 
 ## 自分のキャラで使う
 
-1. 5×5グリッドのスライス画像（A〜Fシート × 25フレーム = 150枚）を用意
-2. `public/slices3/{A..F}/r{0-4}c{0-4}.webp` に配置
-3. `src/character-config.js` の `basePath` を必要に応じて編集
+> **アバター作成の詳細手順**（画像生成プロンプト、テンプレート、差し替え手順など）は
+> 元リポジトリ [tomari-guruguru](https://github.com/rotejin/tomari-guruguru) の `docs/` ディレクトリに記載されています。
+
+1. 元リポジトリの `docs/01_画像生成用テンプレ.png` と `docs/01_画像生成用プロンプト.txt` を参照して6枚のシート画像を作成
+2. `tools/slice_character_sheets.py` で5×5グリッドのスライス画像を生成（A〜Fシート × 25フレーム = 150枚）
+3. `public/slices3/{A..F}/r{0-4}c{0-4}.webp` に配置
+4. `src/character-config.js` の `basePath` を必要に応じて編集
 
 ---
 
