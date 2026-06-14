@@ -19,6 +19,7 @@ const TALK_DEFAULTS = {
   blinkThreshold: 0.22,
   showCamera: false,
   showDebug: false,
+  customBgColor: '#FFF8EE',
 };
 
 const { rows: ROWS, cols: COLS } = charConfig;
@@ -99,6 +100,7 @@ function App() {
   const [micErr, setMicErr] = useState('');
   const [fileName, setFileName] = useState('');
   const [camErr, setCamErr] = useState('');
+  const [showHud, setShowHud] = useState(true);
   const [videoEl, setVideoEl] = useState(null);
   const [camReady, setCamReady] = useState(false);
   const [faceInfo, setFaceInfo] = useState({ yaw: 0, pitch: 0, blink: false, ear: 0.3 });
@@ -112,6 +114,20 @@ function App() {
   const env = useRef(0);
   const tweaksRef = useRef(t);
   tweaksRef.current = t;
+
+  // ── HUD非表示ショートカット（Hキー） ──
+  useEffect(() => {
+    function onKeyDown(e) {
+      // input要素やcontentEditable内では無視
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
+      if (e.key === 'h' || e.key === 'H') {
+        setShowHud(prev => !prev);
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   // ── Webカメラ起動 ──
   useEffect(() => {
@@ -270,6 +286,7 @@ function App() {
       </div>
 
       {/* タイトル */}
+      {showHud ? (
       <div style={{ position: 'absolute', top: '3.5vh', left: 0, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
         <div style={{ fontSize: 'clamp(18px, 2.4vmin, 26px)', fontWeight: 700, color: inkColor, letterSpacing: '0.18em' }}>
           FaceTrack Talk
@@ -278,6 +295,7 @@ function App() {
           {camErr ? camErr : (camReady ? 'カメラで顔を追従するよ' : 'カメラを起動中...')}
         </div>
       </div>
+      ) : null}
 
       {/* カメラプレビュー */}
       {t.showCamera && camReady ? (
@@ -328,6 +346,7 @@ function App() {
       ) : null}
 
       {/* 下部コントロールパネル */}
+      {showHud ? (
       <div style={{
         position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)',
         display: 'flex', alignItems: 'center', gap: 14,
@@ -393,9 +412,10 @@ function App() {
           📷 {t.showCamera ? 'カメラ隠す' : 'カメラ表示'}
         </button>
       </div>
+      ) : null}
 
       {/* エラー表示 */}
-      {micErr ? (
+      {showHud && micErr ? (
         <div style={{ position: 'absolute', bottom: 92, left: '50%', transform: 'translateX(-50%)', color: '#B3261E', fontSize: 13, fontWeight: 700 }}>{micErr}</div>
       ) : null}
       {camErr ? (
@@ -403,12 +423,15 @@ function App() {
       ) : null}
 
       {/* 音声プレイヤー */}
+      {showHud ? (
       <audio ref={audioElRef} controls style={{
         position: 'absolute', bottom: 20, right: 20, width: 260,
         display: fileName ? 'block' : 'none', cursor: 'default'
       }} />
+      ) : null}
 
       {/* Tweaksパネル */}
+      {showHud ? (
       <TweaksPanel title="FaceTrack">
         <TweakSection label="顔追従" />
         <TweakSlider label="追従速度" value={t.smoothing} min={0.05} max={0.6} step={0.01}
@@ -435,11 +458,14 @@ function App() {
           onChange={(v) => setTweak('charSize', v)} />
         <TweakColor label="背景色" value={t.bgColor} options={BG_OPTIONS}
           onChange={(v) => setTweak('bgColor', v)} />
+        <TweakColor label="カスタム色" value={t.customBgColor}
+          onChange={(v) => { setTweak('customBgColor', v); setTweak('bgColor', v); }} />
         <TweakToggle label="カメラプレビュー" value={t.showCamera}
           onChange={(v) => setTweak('showCamera', v)} />
         <TweakToggle label="デバッグ表示" value={t.showDebug}
           onChange={(v) => setTweak('showDebug', v)} />
       </TweaksPanel>
+      ) : null}
     </div>
   );
 }
