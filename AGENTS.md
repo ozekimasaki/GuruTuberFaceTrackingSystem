@@ -2,8 +2,10 @@
 
 ## プロジェクト概要
 
-MediaPipe Face Mesh を使った顔追従 + リップシンク Web アプリ。  
-Web カメラで顔の向き・まばたきを検出し、グリッド状に分割されたキャラクター画像をリアルタイムで切り替えて表示する。
+MediaPipe FaceLandmarker（`@mediapipe/tasks-vision`）を使った顔追従 + リップシンク Web アプリ。  
+Web カメラで顔の向き（yaw/pitch）・まばたきを検出し、5×5 グリッド状に分割されたキャラクター画像をリアルタイムで切り替えて表示する。マイクまたは音声ファイルの音量に応じて口パクさせる。
+
+> 派生元: [tomari-guruguru](https://github.com/rotejin/tomari-guruguru)（マウス追従ベースのオリジナル版）
 
 ## 技術スタック
 
@@ -69,22 +71,26 @@ Webカメラ → video要素 → MediaPipe FaceLandmarker → yaw/pitch/blink/ea
 
 ## 開発環境
 
-- **OS**: Windows
-- **Node.js**: v24
-- **npm**: v11
+- **OS**: Windows での利用を想定（`start.bat` を同梱）。macOS / Linux でも `npm` コマンドで動作する
+- **Node.js**: **20.19+ または 22.12+**（Vite 8 の要件。これ未満では build/dev が `Vite requires Node.js version 20.19+ or 22.12+` で失敗する）。`package.json` に `engines` 指定はなし
+- **パッケージマネージャ**: `npm`（`package-lock.json` を同梱）
 - **ブラウザ要件**: WebRTC (getUserMedia) + WebGL2 (MediaPipe GPU delegate) 対応ブラウザ
-- **ハードウェア**: Web カメラ + マイク必須
+- **ハードウェア**: Web カメラ必須。マイクは口パク（マイク入力）を使う場合に必要（音声ファイル読み込みのみなら任意）
 - **起動方法**: `start.bat` を実行（初回のみ `npm install` → `npm run dev`）
   - ※ `node_modules` が存在しない場合は自動で依存インストールされる
-- **ネットワーク**: 初回起動時に MediaPipe WASM + モデルファイルを CDN からダウンロードするためインターネット接続が必要
+- **ネットワーク**: 初回起動時に MediaPipe WASM + モデルファイルおよび Google Fonts を CDN からダウンロードするためインターネット接続が必要
+- **実行コンテキスト**: カメラ・マイク API は `localhost` または HTTPS 経由でのみ利用可能
 
 ## 開発コマンド
 
 ```bash
+npm install       # 依存インストール
 npm run dev       # Vite dev サーバー起動（127.0.0.1、ブラウザ自動オープン）
-npm run build     # プロダクションビルド
+npm run build     # プロダクションビルド（dist/ に出力）
 npm run preview   # ビルド結果のプレビュー
 ```
+
+- **テスト / lint / typecheck**: いずれも設定されていない（`package.json` の scripts は `dev` / `build` / `preview` のみ、ESLint・Prettier・TypeScript・テストランナーの設定ファイルは無し）。変更後は `npm run build` が通ることで最低限の検証とする。
 
 ## コーディング規約
 
@@ -118,8 +124,16 @@ npm run preview   # ビルド結果のプレビュー
 
 ## 重要な実装詳細
 
-- MediaPipe WASM は CDN (`cdn.jsdelivr.net`) から動的 import
-- 顔追従のキャリブレーションは最初の 30 フレームで基準位置を学習
-- EAR (Eye Aspect Ratio) でまばたき検出（しきい値デフォルト 0.22）
-- 口パクは RMS 音量レベルをエンベロープ追従させ、2 段階のしきい値で 3 段階に分類
+- `@mediapipe/tasks-vision` は `await import(...)` で動的 import し、WASM ランタイム（`cdn.jsdelivr.net`）とモデルファイル（`storage.googleapis.com`）を CDN から取得する
+- 顔追従のキャリブレーションは最初の 30 フレームで基準位置（`baseYaw`/`basePitch`）を学習し、以降は差分ベースで追従する（キャリブレーション中は検出結果をスキップ）
+- ヨーはミラー補正のため反転して扱う（Web カメラ映像がミラー表示のため）
+- EAR (Eye Aspect Ratio) でまばたき検出（しきい値デフォルト 0.22、`BLINK_DEBOUNCE_MS` によるデバウンスあり）
+- 口パクは RMS 音量レベルをエンベロープ追従させ、2 段階のしきい値（`thHalf`/`thFull`）で 3 段階（とじ/はんびらき/ぜんかい）に分類
 - `requestAnimationFrame` ベースのメインループで音声レベル → 口段階を毎フレーム更新
+- 全 150 フレームの `<img>` を事前生成し、`opacity` で表示/非表示を切り替える（画像の差し替え・再マウントは行わない）
+
+## リポジトリのルール・ライセンス
+
+- **`.qoder/rules/project-rules.md`**（always-on ルール）: 作業前に `AGENTS.md` を読む / コメントは日本語 / ファイル名はケバブケース / インライン `style` を使い CSS Modules・Tailwind は導入しない / 関数コンポーネント + Hooks のみ、を厳守すること
+- **ライセンス分離**: プログラム部分は MIT（`LICENSE`）。キャラクター画像などのアセット（`public/slices3/` 等）は MIT 対象外（`ASSET_LICENSE.md`）。桜草メイのキャラクター画像を別用途へ流用・再配布・AI 学習等に使わないこと。差し替え用途では権利を持つ画像に置き換える
+- 変更対象は原則 `src/`・`index.html`・設定ファイルなど。`public/slices3/` のアセットや `LICENSE` / `ASSET_LICENSE.md` を許可なく変更しない

@@ -22,6 +22,17 @@ Webカメラの顔検出（MediaPipe FaceLandmarker）でキャラクターが25
 
 ---
 
+## 要件
+
+- **Node.js**: **20.19+ または 22.12+**（Vite 8 の要件。これ未満だと `npm run build` / `npm run dev` が失敗します）。`package.json` に `engines` 指定はありません
+- **ブラウザ**: WebRTC（`getUserMedia`）と WebGL2（MediaPipe の GPU デリゲート）に対応したモダンブラウザ
+- **Webカメラ**: 顔追従に必須
+- **マイク**: 口パク（マイク入力）を使う場合に必要（音声ファイル読み込みのみなら任意）
+- **インターネット接続**: 初回起動時に MediaPipe の WASM ランタイム・モデルファイルと Google Fonts を CDN から取得します
+- **実行コンテキスト**: カメラ・マイク API は `localhost` または HTTPS 経由でのみ利用可能
+
+---
+
 ## セットアップ
 
 ```bash
@@ -54,6 +65,16 @@ http://127.0.0.1:5173/
 npm run build
 npm run preview   # ビルド結果をローカル確認
 ```
+
+## 開発コマンド
+
+`package.json` に定義されている scripts は以下の3つです（テスト・lint・typecheck の設定はありません）。
+
+| コマンド | 説明 |
+|---|---|
+| `npm run dev` | Vite dev サーバーを起動（`127.0.0.1`、`index.html` を自動オープン） |
+| `npm run build` | プロダクションビルドを `dist/` に出力 |
+| `npm run preview` | ビルド結果をローカルでプレビュー |
 
 ---
 
@@ -133,7 +154,8 @@ Eye Aspect Ratio で目の開閉度を計算:
 > 元リポジトリ [tomari-guruguru](https://github.com/rotejin/tomari-guruguru) の `docs/` ディレクトリに記載されています。
 
 1. 元リポジトリの `docs/01_画像生成用テンプレ.png` と `docs/01_画像生成用プロンプト.txt` を参照して6枚のシート画像を作成
-2. `tools/slice_character_sheets.py` で5×5グリッドのスライス画像を生成（A〜Fシート × 25フレーム = 150枚）
+2. 元リポジトリの `tools/slice_character_sheets.py` で5×5グリッドのスライス画像を生成（A〜Fシート × 25フレーム = 150枚）
+   ※ 当リポジトリにはスライス済み画像のみを同梱しており、生成スクリプトは含まれていません
 3. `public/slices3/{A..F}/r{0-4}c{0-4}.webp` に配置
 4. `src/character-config.js` の `basePath` を必要に応じて編集
 
@@ -156,6 +178,8 @@ Eye Aspect Ratio で目の開閉度を計算:
 
 ## 技術スタック
 
-- **Vite 8** — ビルド・開発サーバー
-- **React 18** — UI フレームワーク
-- **@mediapipe/tasks-vision** — FaceLandmarker（Apache 2.0, Google LLC）
+- **Vite 8** — ビルド・開発サーバー（`@vitejs/plugin-react`）
+- **React 18** — UI フレームワーク（`react` / `react-dom`）
+- **@mediapipe/tasks-vision** — FaceLandmarker（Apache 2.0, Google LLC）。WASM ランタイム・モデルは CDN からロード
+- **Web Audio API** — マイク・音声ファイルの RMS 音量解析（口パク）
+- **Zen Maru Gothic** — Google Fonts から読み込むフォント
